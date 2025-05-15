@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@layer components {
+  .upPostInput {
+    @apply outline-none min-h-14 md:placeholder:text-sm bg-white border rounded-lg px-2 py-2 border-gray-400 placeholder:text-gray-500;
+  }
+  .upPostButton {
+    @apply rounded-sm px-2.5 py-1 cursor-pointer hover:shadow-md md:w-24 md:h-10;
+  }
+  .followButton {
+    @apply border-2 border-gray-300 rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-400;
+  }
+  .hsecol {
+    @apply flex flex-col;
+  }
+  .darkTextInput {
+    @apply dark:bg-[#666666] dark:placeholder:text-white dark:text-white;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .green-scrollbar::-webkit-scrollbar-button {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+  .green-scrollbar::-webkit-scrollbar {
+    /* 전체 스크롤바 영역 (트랙 + 손잡이 포함) */
+    width: 8px;
+  }
+  .green-scrollbar::-webkit-scrollbar-track {
+    /* 스크롤바의 "트랙" — 손잡이가 움직이는 배경 영역 */
+    background: #ffffff; /* 밝은 배경 */
+  }
+  .green-scrollbar::-webkit-scrollbar-thumb {
+    /* 	실제로 사용자가 드래그하는 "스크롤 손잡이" */
+    background-color: #10b981; /* 진한 녹색 */
+    border-radius: 9999px;
+  }
+  .green-scrollbar {
+    /* 브라우저들이 이 커스텀 스크롤바 스타일을 인식하도록 강제하는 핵심 요소 */
+    scrollbar-color: #10b981 #ffffff;
+    scrollbar-width: thin;
+  }
+}
