@@ -67,7 +67,7 @@
 ## 🧑‍💻 개발자
 
 - **강찬희**
-  - GitHub: [uidata101](https://github.com/uidata11/lastProjectMeme)
+  - GitHub: [uidata101](https://github.com/uidata11/lastProjectMeme) 또는 (https://github.com/kunghwan/lastProject) 의 kch branche
   - Email: chan7pp@google.com
 
 ---
