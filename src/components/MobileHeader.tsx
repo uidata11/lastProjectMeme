@@ -1,51 +1,64 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
-  IoMoon,
-  IoSunny,
   IoCloseSharp,
-  IoBookmarkOutline,
-  IoNotificationsOutline,
+  IoBookmark,
+  IoPersonSharp,
+  IoStar,
+  IoLogIn,
+  IoLogOut,
+  IoPersonAdd,
 } from "react-icons/io5";
-import { useRouter } from "next/navigation";
+import { FaCircleQuestion, FaMessage, FaPencil, FaBell } from "react-icons/fa6";
+import { useRouter, usePathname } from "next/navigation";
 import { AUTH } from "@/contextapi/context";
 import { twMerge } from "tailwind-merge";
 import { useAlertModal } from "@/components/AlertStore";
 
-// 모바일 전용 헤더 메뉴 (모달 기반)
-interface MobileHeaderProps {
-  isDarkMode: boolean;
-  toggleDarkMode: () => void;
-  isMenuOpen: boolean;
-  setIsMenuOpen: (open: boolean) => void;
-  hasUnread: boolean;
+// 버튼 스타일 클래스 정의
+const btnClass = twMerge(
+  "flex flex-col items-center justify-center gap-1 px-1 py-4 rounded-lg font-semibold text-md",
+  "bg-gray-100 dark:bg-[#555555] text-black dark:text-[#F1F5F9]",
+  "hover:text-emerald-300 dark:hover:bg-[#555555]  w-20 h-20",
+  "transition-colors duration-200"
+);
+
+// 버튼 데이터 타입 정의
+interface BtnType {
+  label: string; // 버튼 이름
+  icon?: React.ReactNode; // 아이콘
+  path?: string; // 이동 경로
+  auth?: boolean; // 로그인 여부 필요한 기능인지
+  action?: () => void; // 커스텀 액션 함수 (예: 로그아웃)
 }
 
+// 모바일 헤더 컴포넌트
 const MobileHeader = ({
-  isDarkMode,
-  toggleDarkMode,
   isMenuOpen,
   setIsMenuOpen,
   hasUnread,
-}: MobileHeaderProps) => {
+}: {
+  isMenuOpen: boolean; // 메뉴 열림 여부
+  setIsMenuOpen: (open: boolean) => void; // 메뉴 상태 제어 함수
+  hasUnread: boolean; // 읽지 않은 알림 여부
+}) => {
   const router = useRouter();
-  const { user, signout } = AUTH.use();
-  const { openAlert } = useAlertModal();
+  const { user, signout } = AUTH.use(); // 사용자 정보 및 로그아웃 함수
+  const { openAlert } = useAlertModal(); // 알림 모달 함수
+  const pathname = usePathname();
 
-  // 메뉴 닫기 공통 함수
+  // 메뉴 닫기
   const closeMenu = () => setIsMenuOpen(false);
 
-  // 버튼 클릭 시 해당 경로로 이동 및 메뉴 닫기
-  const handleNavigate = useCallback(
-    (path: string) => {
-      router.push(path);
-      closeMenu();
-    },
-    [router]
-  );
+  // 실제 로그아웃 처리 함수
+  const performLogout = () => {
+    signout(); // 로그아웃
+    router.push("/"); // 홈으로 이동
+    closeMenu(); // 메뉴 닫기
+  };
 
-  // 로그아웃 버튼 클릭 시 모달 표시
+  // 로그아웃 버튼 클릭 시 확인 모달 표시
   const handleLogoutClick = () => {
     openAlert("정말로 로그아웃 하시겠습니까?", [
       { text: "아니요" },
@@ -59,104 +72,133 @@ const MobileHeader = ({
     closeMenu();
   };
 
-  // 로그아웃 실행: 유저 상태 제거 + 메인페이지 이동
-  const performLogout = () => {
-    signout();
-    router.push("/");
-    closeMenu();
-  };
-
-  // 버튼 스타일 공통 클래스 정의
-  const baseBtnClass =
-    "w-full grayButton dark:bg-[#333333] dark:text-[#F1F5F9]";
-  const largeBtnClass = twMerge(
-    baseBtnClass,
-    "mb-2 text-xl flex items-center justify-center"
-  );
-  const smallBtnClass = twMerge(
-    baseBtnClass,
-    "mt-2 text-lg font-bold sm:hidden"
-  );
-
-  // 알림 아이콘, 읽지 않은 알림 표시
+  // 알림 아이콘 (읽지 않은 알림이 있을 경우 빨간 점 표시)
   const notificationIcon = (
-    <div className="relative text-3xl">
-      <IoNotificationsOutline />
+    <div className="relative text-2xl">
+      <FaBell />
       {hasUnread && (
         <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-red-600 border border-white" />
       )}
     </div>
   );
 
-  // 다크모드 전환 아이콘
-  const themeIcon = (
-    <span className="text-3xl">{isDarkMode ? <IoMoon /> : <IoSunny />}</span>
+  // 로그인 여부와 무관한 기본 버튼 목록
+  const baseButtons = useMemo(
+    () => [
+      { label: "Q&A", icon: <FaCircleQuestion />, path: "/customer" },
+      { label: "추천", icon: <IoStar />, path: "/upplace" },
+      { label: "피드", icon: <FaMessage />, path: "/feed" },
+      {
+        label: "글쓰기",
+        icon: <FaPencil />,
+        path: "/profile/create",
+        auth: true, // 로그인 필요
+      },
+      { label: "MY", icon: <IoPersonSharp />, path: "/profile", auth: true },
+    ],
+    []
   );
 
-  // 로그인된 유저를 위한 버튼 목록
-  const loggedInButtons = [
-    {
-      onClick: () => handleNavigate("/bookmark"),
-      icon: <IoBookmarkOutline className="text-3xl" />,
-    },
-    {
-      onClick: () => setTimeout(() => handleNavigate("/notification"), 100),
-      icon: notificationIcon,
-    },
-    { onClick: toggleDarkMode, icon: themeIcon },
-    { onClick: handleLogoutClick, label: "로그아웃", className: smallBtnClass },
-  ];
+  // 로그인 여부에 따라 버튼 목록 구성
+  const buttons: BtnType[] = useMemo(() => {
+    if (user) {
+      return [
+        { label: "북마크", icon: <IoBookmark />, path: "/bookmark" },
+        { label: "알림", icon: notificationIcon, path: "/notification" },
+        { label: "로그아웃", icon: <IoLogOut />, action: handleLogoutClick },
+        ...baseButtons,
+      ];
+    }
+    return [
+      { label: "로그인", icon: <IoLogIn />, path: "/signin" },
+      { label: "회원가입", icon: <IoPersonAdd />, path: "/signup" },
+      ...baseButtons,
+    ];
+  }, [user, hasUnread, baseButtons]);
 
-  // 비로그인 유저를 위한 버튼 목록
-  const loggedOutButtons = [
-    { onClick: toggleDarkMode, icon: themeIcon },
-    {
-      onClick: () => handleNavigate("/signin"),
-      label: "로그인",
-      className: smallBtnClass,
+  // 버튼 클릭 핸들러
+  const handleButtonClick = useCallback(
+    (btn: BtnType) => {
+      if (btn.action) return btn.action(); // 커스텀 액션 실행 (ex. 로그아웃)
+      if (btn.auth && !user) {
+        // 로그인 필요한 기능인데 로그인 안된 경우
+        openAlert(
+          "유저만 이용 가능한 기능입니다.\n로그인 하시겠습니까?",
+          [
+            { text: "아니요" },
+            {
+              text: "네",
+              isGreen: true,
+              autoFocus: true,
+              onClick: () => {
+                router.push("/signin");
+                closeMenu();
+              },
+            },
+          ],
+          "로그인이 필요합니다."
+        );
+        return;
+      }
+      if (btn.path) {
+        router.push(btn.path); // 지정된 경로로 이동
+        closeMenu();
+      }
     },
-    {
-      onClick: () => handleNavigate("/signup"),
-      label: "회원가입",
-      className: smallBtnClass,
-    },
-  ];
+    [user, router, openAlert]
+  );
 
-  const isUserBtn = user ? loggedInButtons : loggedOutButtons;
+  // 버튼 렌더링 함수
+  const renderButtons = () => (
+    <div className="grid grid-cols-2 gap-2 justify-items-center items-center">
+      {buttons.map((btn, idx) => (
+        <button
+          key={idx}
+          onClick={() => handleButtonClick(btn)}
+          className={twMerge(
+            btnClass,
+            btn.path === pathname ? "text-primary dark:text-primary" : "" // 강조 스타일 추가
+          )}
+        >
+          {btn.icon && <span className="text-2xl">{btn.icon}</span>}
+          <span>{btn.label}</span>
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <>
-      {/* 모바일 메뉴 오픈 시 표시되는 전체 메뉴 */}
+      {/* 메뉴가 열려 있을 경우만 렌더링 */}
       {isMenuOpen && (
-        <div className="fixed h-screen w-full bg-gray-500/50 z-50 flex items-center justify-center sm:hidden">
-          <div className="bg-white dark:bg-gray-300 p-6 rounded-xl shadow-lg w-[65vw] max-w-sm text-center flex flex-col justify-center">
+        <div
+          className="fixed h-screen w-full bg-gray-500/50 z-50 flex items-center justify-center sm:hidden"
+          onClick={closeMenu} // 배경 클릭 시 메뉴 닫기
+        >
+          <div
+            className="bg-gray-50 dark:bg-[#444444] p-6 rounded-xl shadow-lg w-[60vw] mx-auto text-center flex flex-col"
+            onClick={(e) => e.stopPropagation()} // 내부 클릭 시 닫힘 방지
+          >
             {/* 닫기 버튼 */}
             <div className="flex justify-end mb-2">
-              <button onClick={closeMenu} className="text-2xl">
-                <IoCloseSharp className="dark:text-black m-1 text-3xl" />
+              <button
+                onClick={closeMenu}
+                className="text-2xl hover:text-black "
+              >
+                <IoCloseSharp className="dark:text-white m-1 dark:hover:text-gray-300" />
               </button>
             </div>
 
-            {/* 로그인된 유저 닉네임 표시 */}
+            {/* 사용자 닉네임 출력 */}
             {user && (
-              <div className="text-3xl font-bold whitespace-nowrap flex justify-center mb-4 text-black">
+              <div className="text-2xl font-bold whitespace-nowrap flex justify-center mb-6 text-black dark:text-white">
                 <div className="max-w-40 truncate">{user.nickname}</div>
-                <p className="font-medium">님</p>
+                <p className="font-medium ml-1">님</p>
               </div>
             )}
 
             {/* 버튼 목록 렌더링 */}
-            <div>
-              {isUserBtn.map((btn, index) => (
-                <button
-                  key={index}
-                  onClick={btn.onClick}
-                  className={twMerge(btn.className ?? largeBtnClass)}
-                >
-                  {btn.icon ?? btn.label}
-                </button>
-              ))}
-            </div>
+            {renderButtons()}
           </div>
         </div>
       )}

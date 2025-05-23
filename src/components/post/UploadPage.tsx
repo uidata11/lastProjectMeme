@@ -242,7 +242,20 @@ const UploadPostPage = () => {
             userProfileImage: user.profileImageUrl,
           } as UploadPostProps);
 
-          alert("게시물이 성공적으로 등록되었습니다!");
+          openAlert(
+            "게시물이 성공적으로 등록되었습니다!",
+            [
+              {
+                text: "확인",
+                isGreen: true,
+                autoFocus: true,
+              },
+            ],
+
+            "알림"
+          );
+
+          // alert("게시물이 성공적으로 등록되었습니다!");
           //게시된후 초기화
           setTag("");
           setPost(initialState);
@@ -291,6 +304,22 @@ const UploadPostPage = () => {
   useEffect(() => {
     titleRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return openAlert(
+        "로그인 후 사용해주세요.",
+        [
+          {
+            text: "확인",
+            isGreen: true,
+            autoFocus: true,
+          },
+        ],
+        "알림"
+      );
+    }
+  }, [user, openAlert]);
 
   //! 마우스 휠 가로로 변경
   useEffect(() => {
@@ -360,13 +389,15 @@ const UploadPostPage = () => {
                   title: e.target.value,
                 }))
               }
-              className={twMerge("upPostInput shadow-sm darkTextInput")}
+              className={twMerge(
+                "upPostInput shadow-sm darkTextInput [@media(max-width:375px)]:placeholder:text-[0.75rem]"
+              )}
               ref={titleRef}
               placeholder="제목을 입력하세요."
             />
           </div>
 
-          <div className="hsecol gap-y-1">
+          <div className="hsecol gap-y-1  overflow-hidden ">
             <label
               htmlFor="content"
               className=" inline-block w-fit font-bold text-md text-gray-500 dark:text-white"
@@ -378,7 +409,7 @@ const UploadPostPage = () => {
               id="content"
               placeholder="관광지의 소개글이나 리뷰를 작성해주세요."
               className={twMerge(
-                "h-50 shadow-sm resize-none upPostInput darkTextInput"
+                "box-border rounded-sm  h-50 shadow-sm resize-none upPostInput darkTextInput [@media(max-width:375px)]:placeholder:text-[0.75rem]"
               )}
               value={content}
               ref={descRef}
@@ -482,7 +513,7 @@ const UploadPostPage = () => {
             return;
           }}
           className={twMerge(
-            " bg-gray-300 hover:bg-gray-200 transition duration-300  upPostButton"
+            " bg-gray-200 dark:bg-zinc-500 dark:text-gray-300 hover:bg-gray-200 transition duration-300  upPostButton"
           )}
         >
           취소
@@ -491,7 +522,7 @@ const UploadPostPage = () => {
           type="submit"
           ref={submitButtonRef}
           className={twMerge(
-            " outline-lime-100 hover:bg-[rgba(116,212,186,0.7)]  bg-[rgba(62,188,154)] transition duration-300 upPostButton dark:bg-[rgba(116,212,186,0.5)] dark:text-white"
+            " outline-lime-100 hover:bg-[rgba(116,212,186,0.7)]  bg-primary transition duration-300 upPostButton dark:bg-[rgba(116,212,186,0.5)] dark:text-white"
           )}
         >
           게시

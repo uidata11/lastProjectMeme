@@ -10,6 +10,8 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { validateNickname, validateBio } from "@/lib/validations";
 import ProfileFeedComponent from "./ProfileFeedLayout";
 import { useAlertModal } from "../AlertStore";
+import Router from "next/router";
+import { useRouter } from "next/navigation";
 
 const ProfileLayout = ({
   isMyPage,
@@ -93,8 +95,8 @@ const ProfileLayout = ({
       await uploadBytes(storageRef, imageFile);
       const newUrl = await getDownloadURL(storageRef);
       imageUrl = newUrl;
-      setPreviewImage(newUrl); // ✅ 수정 완료 후에만 바깥에 반영
-      setEditPreviewImage(newUrl); // ✅ 모달 미리보기도 동기화
+      setPreviewImage(newUrl);
+      setEditPreviewImage(newUrl);
     }
 
     try {
@@ -103,14 +105,39 @@ const ProfileLayout = ({
         bio: editBio,
         profileImageUrl: imageUrl,
       });
-      alert("프로필이 수정되었습니다.");
-      setEditOpen(false);
-      location.reload();
+
+      openAlert(
+        "프로필이 수정되었습니다.",
+        [
+          {
+            text: "확인",
+            isGreen: true,
+            onClick: () => {
+              setEditOpen(false);
+              location.reload();
+            },
+          },
+        ],
+        "완료"
+      );
     } catch (err) {
-      alert("수정에 실패했습니다.");
+      openAlert(
+        "수정에 실패했습니다.\n다시 시도해주세요.",
+        [{ text: "닫기" }],
+        "오류"
+      );
       console.error(err);
     }
-  }, [editNickname, editBio, imageFile, previewImage, userData.uid]);
+  }, [
+    editNickname,
+    editBio,
+    imageFile,
+    previewImage,
+    userData.uid,
+    setEditOpen,
+    setPreviewImage,
+    setEditPreviewImage,
+  ]);
 
   const actualPostCount = useMemo(
     () => posts.filter((post) => post.id !== "default").length,
@@ -125,8 +152,6 @@ const ProfileLayout = ({
       return acc;
     }, {} as Record<string, string>);
   }, [tags]);
-
-  const firstPost = useMemo(() => posts[0] ?? null, [posts]);
 
   useEffect(() => {
     if (!userData?.uid) return;
@@ -146,20 +171,22 @@ const ProfileLayout = ({
   }, [userData?.uid]);
   const { openAlert } = useAlertModal();
 
+  const router = useRouter();
+
   return (
-    <div className="flex flex-col w-full min-h-screen">
+    <div className="flex flex-col w-full ">
       {!isSmallScreen ? (
         <div className="flex flex-col mx-auto ">
-          <div className="flex m-5 mb-0 pr-20 pl-20 gap-2.5 justify-center ">
-            <div className="relative w-40 h-40">
+          <div className="flex m-5 mb-0 pr-20 pb-5 pl-20 gap-2.5 justify-center ">
+            <div className="relative w-40 h-40 ">
               <img
-                src={previewImage || defaultImgUrl} // ✅ 수정
+                src={previewImage || defaultImgUrl}
                 alt={`${userData.nickname}'s profile`}
-                className="w-full h-full rounded-full  sm:x-auto  transition-all duration-500 ease-in-out transform hover:scale-[1.02] cursor-pointer"
+                className="w-full h-full rounded-full  sm:x-auto  transition-all duration-500 border border-gray-200 ease-in-out transform hover:scale-[1.02] cursor-pointer"
               />
               {isMyPage ? (
                 <button
-                  onClick={() => setEditOpen(true)} // ✅ 추가됨
+                  onClick={() => setEditOpen(true)}
                   className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-sm font-medium rounded-full opacity-0 hover:opacity-70 transition-opacity"
                 >
                   수정하기
@@ -221,7 +248,14 @@ const ProfileLayout = ({
                 <div className="flex gap-2.5 p-2.5 hover:scale-103 hover:animate-pulse transition-all cursor-pointer active:text-gray-800 ">
                   게시물 <span>{actualPostCount}</span>
                 </div>
-                <div className="flex gap-2.5 p-2.5 hover:scale-103 hover:animate-pulse transition-all cursor-pointer active:text-gray-800 ">
+                <div
+                  className="flex gap-2.5 p-2.5 hover:scale-103 hover:animate-pulse transition-all cursor-pointer active:text-gray-800"
+                  onClick={() => {
+                    if (isMyPage) {
+                      router.push("/subscribers");
+                    }
+                  }}
+                >
                   구독수 <span>{followerCount}</span>
                 </div>
               </div>
@@ -250,9 +284,9 @@ const ProfileLayout = ({
           <div className="flex justify-center mt-5">
             <div className="relative w-32 h-32 ">
               <img
-                src={firstPost?.userProfileImage || defaultImgUrl}
-                alt={`${userData.nickname || "유저"}'s profile`}
-                className=" transition-all duration-500 ease-in-out transform hover:scale-[1.02] w-full h-full rounded-full sm:x-auto cursor-pointer "
+                src={previewImage || defaultImgUrl}
+                alt={`${userData.nickname}'s profile`}
+                className=" transition-all duration-500 ease-in-out transform hover:scale-[1.02] w-full h-full rounded-full border border-gray-200 sm:x-auto cursor-pointer "
               />
               {isMyPage && (
                 <button
@@ -266,12 +300,12 @@ const ProfileLayout = ({
             {isMyPage ? (
               <button
                 onClick={() => setEditOpen(true)}
-                className="text-2xl absolute right-20 sm:right-50 hover:animate-spin hover:scale-105 cursor-pointer p-2.5 active:text-gray-800 hover:text-gray-400  dark:active:text-gray-100"
+                className="text-2xl flex items-start hover:animate-spin hover:scale-105 cursor-pointer p-2.5 active:text-gray-800 hover:text-gray-400  dark:active:text-gray-100"
               >
                 <IoSettingsOutline />
               </button>
             ) : (
-              <div className="absolute right-10  sm:right-40 hover:scale-105 cursor-pointer p-2.5 active:text-gray-800 hover:text-gray-400">
+              <div className="absolute right-10 sm:right-30 hover:scale-105 cursor-pointer p-2.5 active:text-gray-800 hover:text-gray-400">
                 <FollowButton
                   followNickName={userData.nickname ?? "unknown"}
                   followingId={userData.uid}
@@ -288,7 +322,14 @@ const ProfileLayout = ({
                 <div className="flex gap-2.5 p-2.5 hover:scale-103 hover:animate-pulse transition-all cursor-pointer active:text-gray-800 ">
                   게시물 <span>{actualPostCount}</span>
                 </div>
-                <div className="flex gap-2.5 p-2.5 hover:scale-103 hover:animate-pulse transition-all cursor-pointer active:text-gray-800 ">
+                <div
+                  className="flex gap-2.5 p-2.5 hover:scale-103 hover:animate-pulse transition-all cursor-pointer active:text-gray-800"
+                  onClick={() => {
+                    if (isMyPage) {
+                      router.push("/subscribers");
+                    }
+                  }}
+                >
                   구독수 <span>{followerCount}</span>
                 </div>
               </div>
@@ -318,16 +359,16 @@ const ProfileLayout = ({
             uid={userData.uid}
           />
         ) : (
-          <div className="flex pt-10 w-full justify-center">
-            <div className="text-gray-800 text-xl mt-30 animate-bounce dark:text-gray-200">
+          <div className="flex flex-col border-t-2 border-emerald-200 w-full mx-auto items-center">
+            <div className="pt-20 text-gray-800 text-xl animate-bounce dark:text-gray-200">
               게시물이 없습니다
             </div>
           </div>
         )}
       </div>
       {editOpen && (
-        <div className="fixed inset-0  bg-opacity-50 z-60 flex justify-center items-center ">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl w-full max-w-md">
+        <div className="fixed inset-0  bg-opacity-50 z-30000 flex justify-center items-center bg-gray-700/85 dark:bg-gray-800/85 ">
+          <div className="bg-white dark:bg-[#3c3c3c] p-6 rounded-xl shadow-xl w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">프로필 수정</h2>
 
             <label className="block mb-2">닉네임</label>
@@ -350,7 +391,7 @@ const ProfileLayout = ({
                 setEditBio(e.target.value);
                 setBioError("");
               }}
-              className="w-full p-2 border rounded mb-1"
+              className="w-full p-2 border rounded mb-1 resize-none h-30 "
             />
             {bioError && (
               <p className="text-red-500 text-sm mb-2">{bioError}</p>

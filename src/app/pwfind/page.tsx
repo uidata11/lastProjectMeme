@@ -22,6 +22,7 @@ import { FaIdCard } from "react-icons/fa6";
 import { TbPassword } from "react-icons/tb";
 import Link from "next/link";
 import { useAlertModal } from "@/components/AlertStore"; // ✅ zustand 기반 모달 상태
+import { twMerge } from "tailwind-merge";
 
 // 세션 스토리지 키 상수
 const STORAGE_KEYS = {
@@ -255,19 +256,19 @@ const PwFindResult = () => {
   }, [inputName, inputPhone, inputEmail, inputErrors]);
 
   return (
-    <div className="p-2 overflow-auto min-h-screen sm:overflow-visible lg:overflow-visible md:overflow-visible  ">
+    <div className="p-2   ">
       {/* 상단 아이디/비밀번호 찾기 헤더 */}
-      <div className="w-full bg-emerald-100 p-4 whitespace-nowrap dark:bg-emerald-500  ">
+      <div className="w-full bg-primary p-4 whitespace-nowrap dark:bg-[rgba(116,212,186,0.5)]  ">
         <div className="flex md:flex-row items-center gap-4 md:gap-20 p-4 lg:justify-between">
           <div className="flex items-center w-full md:w-80 gap-2 p-2 rounded">
-            <FaIdCard className="text-amber-500 text-4xl dark:text-amber-700" />
-            <p className="font-bold text-black dark:text-white">아이디 찾기</p>
+            <FaIdCard className="text-emerald-500 text-4xl dark:text-emerald-600" />
+            <p className="font-bold text-black  dark:text-white">아이디 찾기</p>
           </div>
           <div className="flex items-center w-full md:w-80 gap-2 p-2 rounded">
-            <TbPassword className="text-blue-500 text-4xl dark:text-blue-700" />
+            <TbPassword className="text-emerald-500 dark:text-emerald-600  text-4xl" />
             <Link
               href="/pwfind"
-              className="font-bold text-black-500  whitespace-nowrap text-amber-500 dark:text-amber-700"
+              className="font-bold text-black-500  whitespace-nowrap text-emerald-700 dark:text-emerald-800 "
             >
               비밀번호 찾기
             </Link>
@@ -289,7 +290,7 @@ const PwFindResult = () => {
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
             placeholder="이름 입력"
-            className="border p-2 border-emerald-300 placeholder:text-emerald-300 lg:w-150 dark:border-emerald-500 dark:placeholder:text-emerald-500"
+            className="CommonInput dark:bg-zinc-700   "
           />
           {inputErrors.name && (
             <p className="text-sm text-red-500 ml-1">{inputErrors.name}</p>
@@ -304,7 +305,7 @@ const PwFindResult = () => {
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
             placeholder="전화번호 입력"
-            className="border p-2 border-emerald-300 placeholder:text-emerald-300 lg:w-150 dark:border-emerald-500 dark:placeholder:text-emerald-500"
+            className="CommonInput dark:bg-zinc-700  "
           />
           {inputErrors.phone && (
             <p className="text-sm text-red-500 ml-1">{inputErrors.phone}</p>
@@ -319,7 +320,7 @@ const PwFindResult = () => {
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
             placeholder="이메일 입력"
-            className="border p-2 border-emerald-300 placeholder:text-emerald-300 lg:w-150 dark:border-emerald-500 dark:placeholder:text-emerald-500"
+            className="CommonInput dark:bg-zinc-700  "
           />
           {inputErrors.email && (
             <p className="text-sm text-red-500 ml-1">{inputErrors.email}</p>
@@ -329,7 +330,7 @@ const PwFindResult = () => {
           <button
             ref={findPasswordButtonRef}
             type="button"
-            className="bg-gray-300 rounded-2xl p-3 mt-2 flex justify-center w-50 items-center lg:w-80 dark:text-white dark:bg-gray-500"
+            className="bg-gray-100 rounded p-3 mt-2 flex justify-center w-50 items-center lg:w-80 dark:text-white dark:bg-gray-800 "
             onClick={handleFindPassword}
           >
             비밀번호 찾기
@@ -340,11 +341,11 @@ const PwFindResult = () => {
       {/* 인증 후 비밀번호 재설정 화면 */}
       {(user || email) && (
         <>
-          <div className="border h-80 justify-center flex items-center border-emerald-100 dark:border-emerald-300">
+          <div className="border h-80 justify-center flex items-center border-gray-400 dark:border-gray-500 rounded-lg ">
             <div>
               <p className="text-xl text-black dark:text-white">
                 이메일:{" "}
-                <span className="font-bold text-blue-600 dark:text-blue-800">
+                <span className="font-bold text-primary dark:text-emerald-500">
                   {user ? user.email : email}
                 </span>
               </p>
@@ -359,7 +360,9 @@ const PwFindResult = () => {
                   onChange={handleChange}
                   onKeyDown={handleKeyDown}
                   placeholder="새비밀번호"
-                  className="border p-2 border-emerald-300 placeholder:text-emerald-300 dark:border-emerald-500 dark:placeholder:text-emerald-500"
+                  className={twMerge(
+                    " CommonInput dark:bg-zinc-700 lg:w-80   "
+                  )}
                 />
                 {validation.newPassword?.message && (
                   <p className="text-sm text-red-500 ml-1">
@@ -376,7 +379,7 @@ const PwFindResult = () => {
                   onChange={handleChange}
                   onKeyDown={handleKeyDown}
                   placeholder="새 비밀번호 확인"
-                  className="border p-2 border-emerald-300 mt-2 placeholder:text-emerald-300 dark:border-emerald-500 dark:placeholder:text-emerald-500"
+                  className={twMerge("CommonInput dark:bg-zinc-700 lg:w-80  ")}
                 />
                 {validation.confirmPassword?.message && (
                   <p className="text-sm text-red-500 ml-1">
@@ -391,7 +394,7 @@ const PwFindResult = () => {
           <div className="flex justify-center">
             <button
               ref={submitButtonRef}
-              className="bg-gray-300 rounded-2xl p-5 mt-3 flex justify-center w-50 items-center lg:w-80 dark:bg-gray-500"
+              className="bg-gray-100 rounded-lg p-5 mt-3 flex justify-center w-50 items-center lg:w-80 dark:bg-gray-800 dark:text-black"
               onClick={handleSubmit}
             >
               확인

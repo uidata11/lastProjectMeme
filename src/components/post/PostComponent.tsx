@@ -11,6 +11,8 @@ import { authService } from "@/lib";
 import { FieldValue, Timestamp } from "firebase/firestore";
 import { HiOutlineX } from "react-icons/hi";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useQueryClient } from "@tanstack/react-query";
+import Loaiding from "../Loading";
 
 const PostComponent = () => {
   const router = useRouter();
@@ -23,6 +25,8 @@ const PostComponent = () => {
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0); // 슬라이더 인덱스
   const [modalImages, setModalImages] = useState<string[]>([]);
+
+  const queryClient = useQueryClient();
 
   function getTimeAgo(time: string | Timestamp | FieldValue): string {
     let createdTime: Date;
@@ -52,7 +56,13 @@ const PostComponent = () => {
   }
 
   useEffect(() => {
-    loadMorePosts();
+    const cached = queryClient.getQueryData<PostType[]>(["cachedPosts"]);
+    if (cached && cached.length > 0) {
+      setPosts(cached);
+      setHasMore(true);
+    } else {
+      loadMorePosts(); // 최초 호출
+    }
   }, []);
 
   //! 날짜 변환 함수 (파이어베이스에 저장된객체를 우리가 볼 수 있는 문자열로 바꿈)
@@ -78,7 +88,12 @@ const PostComponent = () => {
     setPosts((prev) => {
       const ids = new Set(prev.map((p) => p.id));
       const filteredNewPosts = newPosts.filter((p) => !ids.has(p.id));
-      return [...prev, ...filteredNewPosts];
+      const updatedPosts = [...prev, ...filteredNewPosts];
+
+      // ✅ 캐시에 저장
+      queryClient.setQueryData(["cachedPosts"], updatedPosts);
+
+      return updatedPosts;
     });
 
     lastDocRef.current = lastDoc;
@@ -176,10 +191,10 @@ const PostComponent = () => {
           return (
             <div
               key={post.id}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-2xl"
+              className="p-1.5 pb-2.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-2xl"
             >
               <button
-                className="flex gap-1.5 items-center text-center m-1.5"
+                className="flex gap-1.5 items-center mb-2.5  text-center m-1.5"
                 onClick={() => handleClick(post.uid, post.userNickname)}
               >
                 <img
@@ -191,23 +206,25 @@ const PostComponent = () => {
               </button>
 
               <div
-                className="relative cursor-pointer"
+                className="relative cursor-pointer "
                 onClick={() => handleOpenPost(post)}
               >
-                <img
-                  src={images[0] || defaultImgUrl}
-                  alt="Post image"
-                  className="w-full opacity-70 border-gray-300 h-128 object-cover mb-2 transition-all duration-500 ease-in-out transform hover:scale-[1.01] border "
-                />
+                <div className="overflow-hidden rounded-lg  border-gray-300 border">
+                  <img
+                    src={images[0] || defaultImgUrl}
+                    alt="Post image"
+                    className="w-full opacity-70 rounded-lg h-80 sm:h-128 object-cover transition-all duration-500 ease-in-out transform hover:scale-[1.01]  "
+                  />
+                </div>
 
                 {Array.isArray(post.imgs) && post.imgs.length > 1 && (
                   <div className="absolute top-3 right-3 bg-gray-800 opacity-70 text-white text-xs p-2 rounded-full">
-                    +{post.imgs.length}
+                    +{post.imgs.length - 1}
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-20 justify-between items-center text-s text-gray-500 mt-1 dark:text-gray-300">
+              <div className="flex gap-20 justify-between pt-1 items-center text-s text-gray-500 mt-1 dark:text-gray-300">
                 <div className="flex gap-5">
                   <div className="flex-1/4 text-m text-gray-500 dark:text-gray-300">
                     <LikeButton
@@ -225,12 +242,12 @@ const PostComponent = () => {
                 </div>
               </div>
               <p
-                className="text-lg font-semibold truncate  overflow-y-auto
+                className="text-lg font-semibold truncate pt-2.5 overflow-y-auto
             "
               >
                 {post.content}
               </p>
-              <div className="flex flex-wrap">
+              <div className="flex pt-2.5 flex-wrap">
                 {post.tags.map((tag: Tag) => (
                   <div
                     key={tag.id}
@@ -249,25 +266,29 @@ const PostComponent = () => {
         })}
 
       <div ref={observerRef} className="col-span-full h-10" />
-      {loading && <div className="text-center col-span-full">로딩 중...</div>}
+      {loading && (
+        <div>
+          <Loaiding />
+        </div>
+      )}
 
       {selectedPost && (
         <div
-          className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex justify-center items-center "
+          className="fixed inset-0 z-[999] bg-black/30 backdrop-blur-sm flex justify-center items-center"
           onClick={() => setSelectedPost(null)}
         >
           <div
-            className="bg-white rounded-lg w-11/12 md:w-3/5 lg:w-1/2 max-h-[60vh] md:max-h-[80vh] h-screen relative"
+            className="bg-white pb-5 dark:bg-gray-700 rounded-lg w-5/6 md:w-4/5  lg:w-1/2 relative overflow-y-auto transition-all duration-300 transform "
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setSelectedPost(null)}
-              className="absolute z-40 top-2 right-4 md:text-3xl transition-all text-xl font-bold text-gray-700 p-5"
+              className="absolute z-40 top-2 right-2 p-1 md:text-2xl md:top-3 md:right-3 text-xl font-bold text-gray-700 dark:text-white hover:text-gray-400 transition-all"
             >
               <HiOutlineX />
             </button>
-
-            <div className="relative md:w-full w-auto h-1/2 md:h-2/3 mt-5 md:mt-10 flex items-center justify-center">
+            {/* 이미지 슬라이드 영역 */}
+            <div className="relative w-full pt-8 md:pt-10 flex items-center justify-center">
               <img
                 src={
                   modalImages.length > 0
@@ -275,20 +296,21 @@ const PostComponent = () => {
                     : selectedPost.imageUrl?.[0] || defaultImgUrl
                 }
                 alt={`image-${currentIndex}`}
-                className=" object-contain rounded max-h-9/10 md:max-h-110 md:w-110"
+                className="object-contain md:w-140 h-80 md:h-120 rounded"
                 loading="lazy"
               />
+
               {modalImages.length > 1 && (
                 <>
                   <button
                     onClick={handlePrev}
-                    className="absolute left-3 text-2xl text-gray-700 hover:text-gray-400 rounded-full hover:bg-black/5 p-1.5"
+                    className="absolute left-3 text-2xl text-gray-700 dark:text-white hover:text-gray-400 rounded-full p-1.5 hover:bg-black/80 hover:scale-110 transition-all bg-white/40"
                   >
                     <FaChevronLeft />
                   </button>
                   <button
                     onClick={handleNext}
-                    className="absolute right-3 text-2xl text-gray-700 hover:text-gray-400 rounded-full hover:bg-black/5  p-1.5"
+                    className="absolute right-3 text-2xl bg-white/40 text-gray-700 dark:text-white hover:text-gray-400 rounded-full p-1.5 hover:bg-black/80 hover:scale-110 transition-all"
                   >
                     <FaChevronRight />
                   </button>
@@ -296,19 +318,18 @@ const PostComponent = () => {
               )}
             </div>
 
-            <div className="p-4 justify-end flex flex-col">
-              <div className="text-xs text-gray-500 mt-2 flex justify-between mb-2">
+            {/* 게시물 정보 */}
+            <div className="p-3 justify-end flex flex-col pr-2 pl-2 md:h-40 sm:pr-10 sm:pl-10">
+              <div className="text-[10px] text-gray-500 dark:text-gray-300 mt-2 flex justify-between pb-2">
                 <div>장소 : {selectedPost.lo?.address || "주소 없음"}</div>
-                <div>
-                  업로드 시간 : {getFormattedDate(selectedPost.createdAt)}
-                </div>
+                <div>{getFormattedDate(selectedPost.createdAt)}</div>
               </div>
-              <h2 className="text-lg font-bold mb-2 dark:text-gray-600 truncate">
+              <div className="text-lg font-bold pb-4 dark:text-white truncate">
                 {selectedPost.title}
-              </h2>
-              <p className="text-sm text-gray-700 break-words max-h-24 overflow-y-auto pr-1 scrollbar">
+              </div>
+              <div className="text-sm text-gray-700 dark:text-gray-200 break-words overflow-y-auto h-30 pr-2">
                 {selectedPost.content}
-              </p>
+              </div>
             </div>
           </div>
         </div>

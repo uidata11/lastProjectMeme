@@ -7,6 +7,7 @@ import { storageService, dbService, FBCollection } from "@/lib/firebase";
 import { AUTH } from "@/contextapi/context";
 import LoadingPage from "@/components/Loading";
 import { useAlertModal } from "@/components/AlertStore";
+import Image from "next/image"; // 상단 import 추가
 import AlertModal from "@/components/AlertModal";
 
 const SettingProfile = () => {
@@ -266,7 +267,7 @@ const SettingProfile = () => {
   return (
     <>
       {loading && <LoadingPage />} {/* 로딩 화면 */}
-      <div className="flex flex-col gap-y-2 p-4 lg:mx-auto lg:w-130 md:w-130 sm:w-130 overflow-auto min-h-screen">
+      <div className="flex flex-col gap-y-2 p-4 lg:mx-auto lg:w-130 md:w-130 sm:w-130 overflow-auto">
         {/* 닉네임 입력 */}
         <div className="relative">
           <input
@@ -313,7 +314,9 @@ const SettingProfile = () => {
             className="hidden"
           />
           {profile.profileImageUrl && (
-            <img
+            <Image
+              width={128}
+              height={128}
               src={profile.profileImageUrl}
               alt="preview"
               className="mt-2 w-32 h-32 object-cover border rounded"
@@ -330,7 +333,7 @@ const SettingProfile = () => {
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="자기소개를 작성해주세요"
-            className="border w-full h-20 p-3 resize-none mt-5 placeholder:text-black dark:placeholder:text-white"
+            className="border rounded-lg outline-none w-full h-20 p-3 resize-none mt-5 placeholder:text-black dark:border-gray-400  dark:placeholder:text-white CommonInput dark:bg-[#666666]"
           />
           {bioError && (
             <div className="absolute text-red-500 text-xs mt-1">{bioError}</div>
@@ -341,13 +344,11 @@ const SettingProfile = () => {
         <button
           ref={submitButtonRef}
           onClick={handleSubmit}
-          className="p-4 bg-emerald-300 rounded font-bold mt-5 dark:bg-emerald-500"
+          className="p-4 bg-emerald-300 rounded font-bold mt-5  dark:bg-[rgba(116,212,186,0.5)]  "
         >
           가입 완료
         </button>
       </div>
-      {/* 프로필 이미지 추가 확인 모달 */}
-      {/* {showConfirmModal && <AlertModal />} */}
     </>
   );
 };
@@ -356,4 +357,4 @@ export default SettingProfile;
 
 // 닉네임 입력창 클래스
 const settingProfile =
-  "bg-lime-400 p-3 rounded w-80 sm:w-122 mt-5 dark:bg-lime-500";
+  " p-3  w-80 sm:w-122 mt-5  placeholder:text-black dark:placeholder:text-white outline-none CommonInput dark:bg-[#666666] dark:border-gray-400 ";

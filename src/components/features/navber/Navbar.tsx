@@ -1,10 +1,10 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
 import { AUTH } from "@/contextapi/context";
-import { IoPersonSharp, IoStar, IoGridOutline } from "react-icons/io5";
+import { IoPersonSharp, IoStar, IoMenu } from "react-icons/io5";
 import {
   FaMessage,
   FaPencil,
@@ -36,7 +36,7 @@ const Navbar = () => {
   // 버튼 클릭 시 로그인 여부 확인 및 모달 호출
   const navBtnClick = useCallback(
     (btn: (typeof NavBtns)[0], index: number) => {
-      const needsAuth = [, 3, 4].includes(index); //글쓰기, MY는 로그인 필요
+      const needsAuth = [3, 4].includes(index); //글쓰기, MY는 로그인 필요
       if (!user && needsAuth) {
         openAlert(
           "유저만 이용 가능한 기능입니다.\n로그인 하시겠습니까?",
@@ -59,17 +59,30 @@ const Navbar = () => {
   );
 
   const handleToggleNavMenu = useCallback(() => {
-    setIsNavMenuOpen((prev) => !prev);
+    setIsNavMenuOpen((prev) => {
+      localStorage.setItem("isNavMenuOpen", String(!prev));
+      return !prev;
+    });
     setIsGridMenuVisible((prev) => !prev);
   }, []);
 
   const closeNavMenu = useCallback(() => {
     setIsNavMenuOpen(false);
+    localStorage.setItem("isNavMenuOpen", "false");
     setTimeout(() => setIsGridMenuVisible(true), 100);
   }, []);
 
+  //! pc nav 새로고침해도 상태유지
+  useEffect(() => {
+    const saved = localStorage.getItem("isNavMenuOpen");
+    if (saved !== null) {
+      setIsNavMenuOpen(saved === "true");
+      setIsGridMenuVisible(!(saved === "true"));
+    }
+  }, []);
+
   const baseNavStyle =
-    "[@media(min-width:1425px)]:flex absolute w-17 top-45 -left-[125%] bg-gray-100 z-30 rounded-full duration-400 ease-in-out transform dark:bg-[#6B6B6B] dark:text-white";
+    "[@media(min-width:1402px)]:flex absolute w-17 top-45 -left-[125%] bg-gray-50 z-30 rounded-full duration-400 ease-in-out transform dark:bg-[#444444] dark:text-white";
 
   return (
     <>
@@ -79,7 +92,7 @@ const Navbar = () => {
           <div className="mx-auto max-w-100">
             <div className="fixed w-full max-w-100 left-1/2 transform -translate-x-1/2">
               {/* 데스크탑용 메뉴 토글 버튼 */}
-              <div className="hidden [@media(min-width:1425px)]:block">
+              <div className="hidden [@media(min-width:1402px)]:block">
                 {!isNavMenuOpen && isGridMenuVisible && (
                   <button
                     className={twMerge(
@@ -88,7 +101,7 @@ const Navbar = () => {
                     )}
                     onClick={handleToggleNavMenu}
                   >
-                    <IoGridOutline className="hover:animate-pulse text-3xl text-green-400" />
+                    <IoMenu className="hover:animate-pulse text-3xl text-primary" />
                   </button>
                 )}
               </div>
@@ -97,7 +110,7 @@ const Navbar = () => {
               <nav
                 className={twMerge(
                   baseNavStyle,
-                  "flex flex-col justify-between items-center py-5 h-140 overflow-hidden origin-top",
+                  "flex-col justify-between items-center py-5 h-140 overflow-hidden origin-top hidden [@media(min-width:1402px)]:block",
                   isNavMenuOpen
                     ? "scale-100 opacity-100 translate-y-0 transition-transform duration-300"
                     : "scale-0 opacity-0 -translate-y-0 pointer-events-none"
@@ -106,19 +119,19 @@ const Navbar = () => {
                 <ul className="flex flex-col justify-between items-center w-full h-full transition-opacity duration-300">
                   <li className="flex justify-center text-4xl dark:text-white">
                     <button onClick={closeNavMenu}>
-                      <FaCaretUp className="hover:animate-pulse text-3xl" />
+                      <FaCaretUp className="hover:animate-pulse text-3xl hover:text-primary " />
                     </button>
                   </li>
                   {NavBtns.map((btn, index) => (
                     <li
                       key={index}
-                      className="dark:bg-[#6B6B6B] dark:text-[#E5E7EB]"
+                      className="dark:bg-[#444444] dark:text-[#E5E7EB]"
                     >
                       <button
                         className={twMerge(
-                          "flex flex-col gap-y-1.5 items-center justify-center text-3xl p-3 hover:text-green-300",
+                          "flex flex-col gap-y-1.5 items-center justify-center text-3xl p-3 hover:opacity-80 hover:text-primary",
                           pathname === btn.path &&
-                            "text-green-400 dark:text-green-400"
+                            "text-primary dark:text-primary"
                         )}
                         onClick={() => navBtnClick(btn, index)}
                       >
@@ -135,15 +148,14 @@ const Navbar = () => {
 
         {/* 모바일 하단 네비게이션 */}
         {pathname !== "/signin" && pathname !== "/signup" && (
-          <nav className="dark:bg-[#6B6B6B] dark:text-white fixed bottom-0 left-0 right-0 bg-gray-100 z-20 flex justify-around items-center [@media(min-width:1425px)]:hidden rounded-t-2xl max-w-300 mx-auto ">
+          <nav className="dark:bg-[#444444] h-20 dark:text-[#F1F5F9] fixed bottom-0 left-0 right-0 bg-gray-50 z-20 flex justify-around items-center [@media(min-width:1402px)]:hidden rounded-t-2xl  mx-auto ">
             <ul className="flex justify-around w-full">
               {NavBtns.map((btn, index) => (
                 <li key={index}>
                   <button
                     className={twMerge(
-                      "justify-center text-3xl p-2.5 flex flex-col gap-y-1.5 items-center bg-gray-100 dark:bg-[#6B6B6B] dark:text-[#E5E7EB] hover:text-green-300",
-                      pathname === btn.path &&
-                        "text-green-400 dark:text-green-400"
+                      " justify-center text-3xl flex flex-col gap-y-1.5 items-center bg-gray-50 dark:bg-[#444444] dark:text-[#E5E7EB] hover:text-primary hover:opacity-80",
+                      pathname === btn.path && "text-primary dark:text-primary"
                     )}
                     onClick={() => navBtnClick(btn, index)}
                   >

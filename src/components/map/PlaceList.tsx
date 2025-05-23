@@ -10,7 +10,7 @@ interface PlaceListProps {
 }
 
 const listBtn =
-  "flex flex-col items-center w-full p-3 gap-y-1 outline-none border rounded-lg border-gray-200 dark:border dark:border-gray-400 focus:border focus:rounded-lg hover:border hover:rounded-lg hover:border-green-400 focus:border-green-400";
+  "flex flex-col items-center w-full p-3 gap-y-1 outline-none border rounded-lg border-gray-200 dark:border dark:border-gray-400 focus:border focus:rounded-lg hover:border hover:rounded-lg hover:border-primary focus:border-primary";
 
 const PlaceList = ({
   places,
@@ -28,25 +28,25 @@ const PlaceList = ({
   return (
     <div
       className={twMerge(
-        "hidden md:flex absolute top-0 right-0 w-80 max-h-[76vh] h-full p-4 bg-gray-100 border border-gray-200 flex-col rounded-3xl z-10 dark:bg-[#4B4B4B] dark:text-[#E5E7EB] transition-transform duration-300 ease-in-out",
-        isOpen ? "translate-x-0" : "translate-x-full"
+        "hidden md:flex absolute top-0 right-4 w-80 p-4 h-full bg-gray-50 border border-gray-200 flex-col rounded-3xl z-10 dark:bg-[#444444] dark:border-[#444444] dark:text-[#E5E7EB] transform transition-transform duration-300 ease-linear", // 애니메이션 부드럽게
+        isOpen ? "translate-x-0" : "translate-x-20" //
       )}
     >
       <button
         onClick={() => {
           setIsOpen(false);
-          setTimeout(onClose, 300);
+          onClose();
         }}
         className="text-gray-500 hover:text-gray-300 text-2xl absolute top-3 right-5 dark:text-white"
       >
         <IoClose />
       </button>
 
-      <ul className="space-y-4 overflow-y-auto max-h-full mt-6 px-3 green-scrollbar">
+      <ul className="space-y-4 overflow-y-auto max-h-full mt-6 px-3 ">
         {places.map((place) => (
           <li
             key={place.id}
-            className="bg-white dark:bg-[#6B6B6B] dark:text-[#E5E7EB] rounded-lg hover:opacity-80"
+            className="bg-gray-100 dark:bg-[#555555] dark:text-[#E5E7EB] rounded-lg hover:opacity-80"
           >
             <button
               ref={(clickFocus) => {

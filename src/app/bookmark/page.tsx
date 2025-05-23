@@ -12,14 +12,16 @@ import {
 } from "firebase/firestore";
 import { Timestamp, FieldValue } from "firebase/firestore";
 import { authService, dbService } from "@/lib/firebase";
-import { Post } from "@/types/post";
+import { Post, Tag } from "@/types/post";
 import { useRouter } from "next/navigation";
 import UpPlaceBookMark from "@/components/upplace/UpPlaceBookMark";
 import LikeButton from "@/components/post/LikeButton";
 import { FcLike } from "react-icons/fc";
 import { HiOutlineX } from "react-icons/hi";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { getTimeAgo } from "@/lib/post";
+import { useQueryClient } from "@tanstack/react-query";
+import TopButton from "@/components/upplace/TopButton";
+import Loaiding from "@/components/Loading";
 
 type SortOption = "recent" | "oldest" | "likes";
 
@@ -34,33 +36,6 @@ const BookmarkPage = () => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalImages, setModalImages] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  function getTimeAgo(time: string | Timestamp | FieldValue): string {
-    let createdTime: Date;
-
-    if (typeof time === "string") {
-      createdTime = new Date(time);
-    } else if (time instanceof Timestamp) {
-      createdTime = time.toDate();
-    } else {
-      // FieldValue인 경우는 렌더링 시점에는 있을 수 없음
-      return "시간 정보 없음";
-    }
-
-    const now = new Date();
-    const diff = now.getTime() - createdTime.getTime();
-
-    const minute = 60 * 1000;
-    const hour = 60 * minute;
-    const day = 24 * hour;
-    const week = 7 * day;
-
-    if (diff < minute) return "방금 전";
-    if (diff < hour) return `${Math.floor(diff / minute)}분 전`;
-    if (diff < day) return `${Math.floor(diff / hour)}시간 전`;
-    if (diff < week) return `${Math.floor(diff / day)}일 전`;
-    return `${Math.floor(diff / week)}주 전`;
-  }
 
   const getFormattedDate = (createdAt: Post["createdAt"]) => {
     //! 지금 들어온 createdAt 값이 Firebase의 Timestamp 객체인가를 검사(instanceof)
@@ -83,20 +58,16 @@ const BookmarkPage = () => {
       return 0; // FieldValue 등 아직 날짜로 변환 불가한 경우
     }
   };
-  //사람이 읽기 좋은 날짜 문자열로 바꾸는 함수
-  const formatCreatedAt = (
-    createdAt: string | Timestamp | FieldValue
-  ): string => {
-    if (createdAt instanceof Timestamp) {
-      return createdAt.toDate().toLocaleString();
-    } else if (typeof createdAt === "string") {
-      return new Date(createdAt).toLocaleString();
-    } else {
-      return "날짜 정보 없음";
-    }
-  };
 
+  const queryClient = useQueryClient();
   useEffect(() => {
+    const cached = queryClient.getQueryData<Post[]>(["likedPosts"]);
+    if (cached) {
+      setPosts(cached);
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(authService, async (user) => {
       if (!user) {
         setPosts([]);
@@ -120,6 +91,9 @@ const BookmarkPage = () => {
         });
 
         setPosts(likedPosts);
+
+        // ✅ 캐시에 저장
+        queryClient.setQueryData(["likedPosts"], likedPosts);
       } catch (error) {
         console.error("Error fetching liked posts:", error);
       } finally {
@@ -199,7 +173,39 @@ const BookmarkPage = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  if (loading) return <div>로딩 중...</div>;
+  if (loading)
+    return (
+      <div>
+        <Loaiding message="북마크페이지로 이동중입니다..." />
+      </div>
+    );
+
+  function getTimeAgo(time: string | Timestamp | FieldValue): string {
+    let createdTime: Date;
+
+    if (typeof time === "string") {
+      createdTime = new Date(time);
+    } else if (time instanceof Timestamp) {
+      createdTime = time.toDate();
+    } else {
+      // FieldValue인 경우는 렌더링 시점에는 있을 수 없음
+      return "시간 정보 없음";
+    }
+
+    const now = new Date();
+    const diff = now.getTime() - createdTime.getTime();
+
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const week = 7 * day;
+
+    if (diff < minute) return "방금 전";
+    if (diff < hour) return `${Math.floor(diff / minute)}분 전`;
+    if (diff < day) return `${Math.floor(diff / hour)}시간 전`;
+    if (diff < week) return `${Math.floor(diff / day)}일 전`;
+    return `${Math.floor(diff / week)}주 전`;
+  }
 
   return (
     <div className="flex flex-col mx-auto p-2 lg:w-3/4 w-full ">
@@ -210,7 +216,7 @@ const BookmarkPage = () => {
         </p>
         <button
           onClick={handleBack}
-          className="text-sm text-emerald-600 font-bold dark:text-emerald-200 hover:underline hover:scale-105 transition-transform duration-200"
+          className="text-sm font-medium text-emerald-600 dark:text-emerald-200 hover:scale-105  hover:text-emerald-700 dark:hover:text-emerald-100 transition-all duration-200"
         >
           ← 이전 페이지
         </button>
@@ -229,8 +235,8 @@ const BookmarkPage = () => {
               onClick={() => setSort(value as SortOption)}
               className={`px-4 py-1.5 rounded-full border text-sm font-medium shadow transition-all duration-200 hover:scale-105 ${
                 sort === value
-                  ? "bg-blue-500 text-white border-blue-500 dark:text-gray-200"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-300"
+                  ? "bg-emerald-500 text-white border-emerald-200 dark:text-gray-200 dark:bg-emerald-500 dark:border-emerald-700"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:border-gray-800 dark:text-gray-300 scale-90"
               }`}
             >
               {label}
@@ -238,7 +244,7 @@ const BookmarkPage = () => {
           ))}
         </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-4 mb-20 p-1.5 m-1 w-full max-w-screen-lg mx-auto transition-all">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-20 p-1.5 m-1 w-full max-w-screen-lg mx-auto transition-all">
         {sortedPosts.map((post) => {
           const image =
             typeof post.imageUrl === "string"
@@ -251,9 +257,9 @@ const BookmarkPage = () => {
             <div
               key={post.id}
               onClick={() => handleOpenPost(post)}
-              className="hover:bg-gray-100 dark:hover:bg-gray-600 rounded-2xl p-1.5 cursor-pointer relative"
+              className="hover:bg-gray-100 border overflow-hidden border-gray-200  dark:border-gray-600 dark:hover:bg-zinc-700 rounded-2xl p-1.5 cursor-pointer relative"
             >
-              <div className="m-1.5 flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 ">
                 <img
                   src={post.userProfileImage}
                   alt="userProfileImage"
@@ -262,32 +268,46 @@ const BookmarkPage = () => {
                 <div className="font-bold">{post.userNickname}</div>
               </div>
 
-              <div className="relative">
+              <div className="mt-2 relative rounded-xl overflow-hidden">
                 <img
                   src={image}
                   alt="Post image"
-                  className="w-full h-64 object-cover mb-2 transition-all duration-500 ease-in-out transform hover:scale-[1.01] rounded-xl"
+                  className="w-full h-80 object-cover transition-all duration-500 ease-in-out transform hover:scale-[1.01] rounded-xl"
                 />
                 {Array.isArray(post.imgs) && post.imgs.length > 1 && (
-                  <div className="absolute top-2 right-2 bg-gray-800 opacity-80 text-white text-xs p-1.5 rounded-full">
+                  <div className="absolute top-2 right-2 bg-gray-800 opacity-80 text-white text-xs p-1.5 rounded-xl">
                     +{post.imgs.length}
                   </div>
                 )}
               </div>
-
-              <p className="truncate">{post.content}</p>
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleLike(post.id!);
-                }}
-                className="flex items-center mb-2.5"
-              >
-                <LikeButton
-                  postId={post.uid}
-                  likedBy={post.likes}
-                  postOwnerId={post.uid}
-                />
+              <div className="pt-2 pb-1 flex justify-between items-center">
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleLike(post.id!);
+                  }}
+                  className="flex items-center"
+                >
+                  <LikeButton
+                    postId={post.uid}
+                    likedBy={post.likes}
+                    postOwnerId={post.uid}
+                  />
+                </div>
+                <div className="items-baseline text-end text-gray500 text-sm">
+                  {getTimeAgo(post.createdAt)}
+                </div>
+              </div>
+              <p className="truncate font-bold">{post.title}</p>
+              <div className="flex flex-wrap">
+                {post.tags.map((tag: Tag) => (
+                  <div
+                    key={tag.id}
+                    className="px-2 py-1 text-xs text-gray-600 dark:text-gray-300"
+                  >
+                    <p>{tag.name}</p>
+                  </div>
+                ))}
               </div>
             </div>
           );
@@ -299,21 +319,21 @@ const BookmarkPage = () => {
       </div>
       {selectedPost && (
         <div
-          className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex justify-center items-center "
+          className="fixed inset-0 z-[999] bg-black/30 backdrop-blur-sm flex justify-center items-center"
           onClick={() => setSelectedPost(null)}
         >
           <div
-            className="bg-white rounded-lg w-11/12 md:w-3/5 lg:w-1/2 max-h-[60vh] md:max-h-[80vh] h-screen relative"
+            className="bg-white pb-5 dark:bg-gray-700  rounded-lg w-5/6 md:w-4/5  lg:w-1/2 relative overflow-y-auto transition-all duration-300 transform "
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setSelectedPost(null)}
-              className="absolute z-40 top-2 right-4 md:text-3xl transition-all text-xl font-bold text-gray-700 p-5"
+              className="absolute z-40 top-2 right-2 p-1 md:text-2xl md:top-3 md:right-3 text-xl font-bold text-gray-700 dark:text-white hover:text-gray-400 transition-all"
             >
               <HiOutlineX />
             </button>
-
-            <div className="relative md:w-full w-auto h-1/2 md:h-2/3 mt-5 md:mt-10 flex items-center justify-center">
+            {/* 이미지 슬라이드 영역 */}
+            <div className="relative w-full pt-8 md:pt-10 flex items-center justify-center">
               <img
                 src={
                   modalImages.length > 0
@@ -321,20 +341,21 @@ const BookmarkPage = () => {
                     : selectedPost.imageUrl?.[0] || defaultImgUrl
                 }
                 alt={`image-${currentIndex}`}
-                className=" object-contain rounded md:max-h-110 md:w-110"
+                className="object-contain md:w-140 h-80 md:h-120 rounded"
                 loading="lazy"
               />
+
               {modalImages.length > 1 && (
                 <>
                   <button
                     onClick={handlePrev}
-                    className="absolute left-3 text-2xl text-gray-700 hover:text-gray-400 rounded-full p-1.5"
+                    className="absolute left-3 text-2xl text-gray-700 dark:text-white hover:text-gray-400 rounded-full p-1.5 hover:bg-black/80 hover:scale-110 transition-all bg-white/40"
                   >
                     <FaChevronLeft />
                   </button>
                   <button
                     onClick={handleNext}
-                    className="absolute right-3 text-2xl text-gray-700 hover:text-gray-400 rounded-full p-1.5"
+                    className="absolute right-3 text-2xl bg-white/40 text-gray-700 dark:text-white hover:text-gray-400 rounded-full p-1.5 hover:bg-black/80 hover:scale-110 transition-all"
                   >
                     <FaChevronRight />
                   </button>
@@ -342,21 +363,24 @@ const BookmarkPage = () => {
               )}
             </div>
 
-            <div className="p-4 justify-end flex flex-col">
-              <div className="text-xs text-gray-500 mt-2 flex justify-between mb-5">
+            {/* 게시물 정보 */}
+            <div className="p-3 justify-end flex flex-col pr-2 pl-2 md:h-40 sm:pr-10 sm:pl-10">
+              <div className="text-[10px] text-gray-500 dark:text-gray-300 mt-2 flex justify-between pb-2">
                 <div>장소 : {selectedPost.lo?.address || "주소 없음"}</div>
                 <div>{getFormattedDate(selectedPost.createdAt)}</div>
               </div>
-              <h2 className="text-lg font-bold mb-2 dark:text-gray-600 truncate">
+              <div className="text-lg font-bold pb-4 dark:text-white truncate">
                 {selectedPost.title}
-              </h2>
-              <p className="text-sm text-gray-700 break-words">
+              </div>
+              <div className="text-sm text-gray-700 dark:text-gray-200 break-words overflow-y-auto h-30 pr-2">
                 {selectedPost.content}
-              </p>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      <TopButton />
     </div>
   );
 };

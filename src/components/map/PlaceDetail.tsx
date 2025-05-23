@@ -21,6 +21,7 @@ interface Props {
 const PlaceDetail = ({ detailRef, onClose, place }: Props) => {
   const { openAlert } = useAlertModal();
 
+  //! 주소 복사 기능
   const jusoClip = useCallback(
     (selectedPlace: PlaceProps) => [
       {
@@ -37,6 +38,7 @@ const PlaceDetail = ({ detailRef, onClose, place }: Props) => {
     []
   );
 
+  //! 전화번호 없을경우
   const handleCopy = (text: string, msg: string) => {
     if (text === "전화번호 없음") {
       openAlert("해당 장소의 전화번호가 등록되지 않았습니다.", [
@@ -50,8 +52,10 @@ const PlaceDetail = ({ detailRef, onClose, place }: Props) => {
 
   return (
     <div
+      className="absolute z-10 shadow-md w-60 max-w-xs p-3 h-fit bg-gray-50 dark:bg-[#555555] dark:text-white border border-gray-100 dark:border-gray-500 rounded-xl sm:rounded-2xl
+
+    left-[20%] top-[32%] -translate-y-1/2 sm:left-[25%] sm:top-[21%] sm:translate-x-0 sm:translate-y-0 lg:left-[35%] lg:top-[20%] lg:translate-x-0 lg:translate-y-0"
       ref={detailRef}
-      className="absolute z-10 shadow-md sm:block sm:top-[21%] sm:left-[27%] left-[20%] top-[32%] -translate-y-1/2 sm:translate-x-0 sm:translate-y-0 w-60 max-w-xs bg-white border border-gray-300 rounded-xl sm:rounded-2xl p-3 h-fit dark:bg-[#6B6B6B] dark:text-white "
     >
       <button
         onClick={onClose}
@@ -61,7 +65,7 @@ const PlaceDetail = ({ detailRef, onClose, place }: Props) => {
       </button>
 
       <h2 className="text-sm sm:text-md mb-2 font-semibold">상세 정보</h2>
-      <p className="font-bold sm:font-extrabold text-base sm:text-lg text-green-400 truncate">
+      <p className="font-bold sm:font-extrabold text-base sm:text-lg text-primary truncate">
         {place.place_name}
       </p>
       <p className="text-sm truncate">
@@ -73,7 +77,11 @@ const PlaceDetail = ({ detailRef, onClose, place }: Props) => {
 
       <ul className="mt-2 flex gap-x-2 text-lg sm:text-xl">
         {jusoClip(place).map(({ icon, text, msg }, i) => (
-          <button key={i} onClick={() => handleCopy(text, msg)}>
+          <button
+            key={i}
+            onClick={() => handleCopy(text, msg)}
+            className="hover:text-primary"
+          >
             {icon}
           </button>
         ))}
